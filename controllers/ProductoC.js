@@ -1,4 +1,5 @@
 const Producto = require("../models/ProductoModel");
+const { appConfig } = require("../config/config");
 
 exports.productoPost = async (req, res) => {
   try {
@@ -42,23 +43,26 @@ exports.productoPut = async (req, res) => {
   if (precio) {
     nuevoproducto.precio = precio;
   }
-  if (req.file) {
-    const { filename } = req.file;
-    producto.setImgUrl(filename);
-  }
+
   try {
     const existe = await Producto.findById(req.params.id);
 
     if (!existe) {
       return res.status(404).json({ msg: "El proyecto no existe" });
     }
-
+   
+    if (req.file) {
+      const {filename} = req.file
+      const { host, port } = appConfig;
+      nuevoproducto.imageURL = `${host}:${port}/public/${filename}`;
+    }
     const producto = await Producto.findByIdAndUpdate(
       { _id: req.params.id },
       { $set: nuevoproducto },
       { new: true }
     );
-    res.send(producto);
+  
+    res.send({ producto });
   } catch (error) {
     console.log(error);
     res.status(500).json({ msg: "No se pudo actualizar el producto" });
